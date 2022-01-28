@@ -38,7 +38,7 @@ app.get("/logout", (req, res) => {
   res.redirect("/");
 });
 
-// Check if user login info exists in the database
+// Log in an existing user and check if their credentials exist in the database
 app.post("/login", (req, res) => {
   const username = req.body.username;
   const password = md5(req.body.password);
@@ -47,10 +47,11 @@ app.post("/login", (req, res) => {
     // if user doesn't exist in the DB, throw an error
     if (err) {
       console.log(err);
-    // if user exists, verify password entered by the user to match the one in DB
+    // if user exists, verify password entered by the user to match the one in
+    // the database
     } else {
       if (foundUser) {
-        // if password entered by the user matches the one in DB,
+        // if password entered by the user matches the one in database,
         // display the Secrets page
         if (foundUser.password === password) {
           res.render("secrets");
@@ -61,6 +62,7 @@ app.post("/login", (req, res) => {
 
 });
 
+// Register a new user
 app.post("/register", (req, res) => {
   const newUser = new User({
     email : req.body.username,
