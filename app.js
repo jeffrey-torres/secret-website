@@ -3,7 +3,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
 const mongoose = require('mongoose');
-const md5 = require('md5');
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 const app = express();
 
@@ -41,7 +42,7 @@ app.get("/logout", (req, res) => {
 // Check if user login info exists in the database
 app.post("/login", (req, res) => {
   const username = req.body.username;
-  const password = md5(req.body.password);
+  const password = req.body.password;
 
   User.findOne({email: username}, (err, foundUser) => {
     // if user doesn't exist in the DB, throw an error
@@ -50,33 +51,36 @@ app.post("/login", (req, res) => {
     // if user exists, verify password entered by the user to match the one in DB
     } else {
       if (foundUser) {
-        // if password entered by the user matches the one in DB,
-        // display the Secrets page
-        if (foundUser.password === password) {
-          res.render("secrets");
-        }
+        // Compare the password the user entered with the hash that corresponds
+        // with the password in the database
+        bcrypt.compare(password, foundUser.password, function(err, result) {
+          if (result === true) {
+            res.render("secrets");
+          }
+        });
       }
     }
   });
-
 });
 
 app.post("/register", (req, res) => {
-  const newUser = new User({
-    email : req.body.username,
-    password : md5(req.body.password);
-  });
+  // Auto generate a salt and a hash
+  bcrypt.hash(req.body.password, saltRounds, function(err, hash) {
 
-  newUser.save((err) => {
-    if (err) {
-      console.log(err);
-    } else {
-      res.render("secrets");
-    }
+    const newUser = new User({
+      email : req.body.username,
+      password : hash
+    });
+
+    newUser.save((err) => {
+      if (err) {
+        console.log(err);
+      } else {
+        res.render("secrets");
+      }
+    });
   });
 });
-
-
 
 app.listen(3000, () => {
   console.log("Server started on port 3000.");
