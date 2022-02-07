@@ -7,7 +7,7 @@ const session = require('express-session');
 const passport = require('passport');
 const passportLocalMongoose = require('passport-local-mongoose');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-var findOrCreate = require('mongoose-findorcreate');
+const findOrCreate = require('mongoose-findorcreate');
 
 const app = express();
 
@@ -30,8 +30,8 @@ mongoose.connect("mongodb://localhost:27017/userDB", {useNewUrlParser : true});
 
 const userSchema = new mongoose.Schema({
   email : String,
-  password : String,
-  googleId : String
+  password: String,
+  googleId: String
 });
 
 userSchema.plugin(passportLocalMongoose);
@@ -50,9 +50,6 @@ passport.deserializeUser((id, done) => {
     done(err, user);
   });
 });
-
-// passport.serializeUser(User.serializeUser());
-// passport.deserializeUser(User.deserializeUser());
 
 passport.use(new GoogleStrategy({
     clientID: process.env.CLIENT_ID,
@@ -82,7 +79,7 @@ app.get("/auth/google/secrets",
   function(req, res) {
     // Successful authentication, redirect home.
     res.redirect('/secrets');
-  });
+});
 
 app.get("/login", (req, res) => {
   res.render("login");
