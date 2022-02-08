@@ -10,6 +10,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook');
 const RedditStrategy = require('passport-reddit').Strategy;
 const findOrCreate = require('mongoose-findorcreate');
+const crypto = require('crypto');
 
 const app = express();
 
@@ -90,7 +91,7 @@ passport.use(new RedditStrategy({
     callbackURL: "http://localhost:3000/auth/reddit/secrets"
   },
   function(accessToken, refreshToken, profile, done) {
-    console.log(profile);
+    console.log(profile.id);
 
     User.findOrCreate({ redditId: profile.id }, function (err, user) {
       return done(err, user);
@@ -123,14 +124,24 @@ app.get("/auth/google/secrets",
     res.redirect("/secrets");
 });
 
-app.get("/auth/reddit",
-  passport.authenticate("reddit"));
+app.get("/auth/reddit", function(req, res, next){
+  req.session.state = crypto.randomBytes(32).toString("hex");
+  passport.authenticate("reddit", {
+    state: req.session.state,
+  })(req, res, next);
+});
 
-app.get("/auth/reddit/secrets",
-  passport.authenticate("reddit", { failureRedirect: "/login" }),
-  function(req, res) {
-    // Successful authentication, redirect to Secrets page.
-    res.redirect("/secrets");
+app.get("/auth/reddit/secrets", function(req, res, next){
+  // Check for origin via state token
+  if (req.query.state == req.session.state){
+    passport.authenticate("reddit", {
+      successRedirect: "/secrets",
+      failureRedirect: "/login"
+    })(req, res, next);
+  }
+  else {
+    next( new Error (403) );
+  }
 });
 
 app.get("/login", (req, res) => {
